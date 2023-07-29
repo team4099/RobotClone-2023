@@ -115,4 +115,9 @@ object Constants {
     const val LED_CANDLE_ID = 61
     const val LED_BLINKEN_ID = 1
   }
+
+  object Manipulator {
+    //TODO update with actual ID's
+    const val ROLLER_MOTOR = 0
+  }
 }

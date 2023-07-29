@@ -106,7 +106,7 @@ class Manipulator(private val io: ManipulatorIO){
   }
 
   /**
-   * Sets the power of the roller in volts.
+   * Sets th e power of the roller in volts.
    *
    * @param rpm: The revolutions per minute of the roller as stated in radians per second.
    */

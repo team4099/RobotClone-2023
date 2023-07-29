@@ -1,14 +1,21 @@
 package com.team4099.robot2023.config.constants
 import org.team4099.lib.units.base.amps
+import org.team4099.lib.units.base.grams
+import org.team4099.lib.units.base.meters
 import org.team4099.lib.units.base.seconds
 import org.team4099.lib.units.derived.gearRatio
 import org.team4099.lib.units.derived.rotations
 import org.team4099.lib.units.derived.volts
+import org.team4099.lib.units.kilo
 import org.team4099.lib.units.perMinute
 
 object ManipulatorConstants {
   //TODO get actual gear ration
   val ROLLER_GEAR_RATIO = 1.0.gearRatio
+
+  //TODO get actual moment of inertia
+  val MOMENT_INERTIA = 0.0000478.kilo.grams * 1.0.meters.squared
+
   val ROLLER_VOLTAGE_COMPENSATION = 12.volts
   val ROLLER_CURRENT_LIMIT = 40.amps
 

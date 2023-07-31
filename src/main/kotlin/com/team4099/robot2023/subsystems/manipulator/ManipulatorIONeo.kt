@@ -12,49 +12,50 @@ import org.team4099.lib.units.base.amps
 import org.team4099.lib.units.base.celsius
 import org.team4099.lib.units.base.inAmperes
 import org.team4099.lib.units.derived.ElectricalPotential
-import org.team4099.lib.units.derived.asDrivenOverDriving
+import org.team4099.lib.units.derived.asDrivingOverDriven
 import org.team4099.lib.units.derived.inVolts
 import org.team4099.lib.units.derived.volts
 import org.team4099.lib.units.sparkMaxAngularMechanismSensor
 import kotlin.math.absoluteValue
 
 object ManipulatorIONeo : ManipulatorIO {
-  private val rollerSparkMax = CANSparkMax(Constants.Manipulator.ROLLER_MOTOR, CANSparkMaxLowLevel.MotorType.kBrushless)
+  private val rollerSparkMax =
+    CANSparkMax(Constants.Manipulator.ROLLER_MOTOR, CANSparkMaxLowLevel.MotorType.kBrushless)
 
-  private val rollerSensor = sparkMaxAngularMechanismSensor(
-    rollerSparkMax,
-    ManipulatorConstants.ROLLER_GEAR_RATIO.asDrivenOverDriving,
-    ManipulatorConstants.ROLLER_VOLTAGE_COMPENSATION
-  )
+  private val rollerSensor =
+    sparkMaxAngularMechanismSensor(
+      rollerSparkMax,
+      ManipulatorConstants.ROLLER_GEAR_RATIO.asDrivingOverDriven,
+      ManipulatorConstants.ROLLER_VOLTAGE_COMPENSATION
+    )
 
- init {
-   rollerSparkMax.restoreFactoryDefaults()
-   rollerSparkMax.clearFaults()
+  init {
+    rollerSparkMax.restoreFactoryDefaults()
+    rollerSparkMax.clearFaults()
 
-   rollerSparkMax.enableVoltageCompensation(ManipulatorConstants.ROLLER_VOLTAGE_COMPENSATION.inVolts)
-   rollerSparkMax.setSmartCurrentLimit(
-     ManipulatorConstants.ROLLER_CURRENT_LIMIT.inAmperes.toInt()
-   )
-   rollerSparkMax.inverted = ManipulatorConstants.ROLLER_MOTOR_INVERTED
+    rollerSparkMax.enableVoltageCompensation(
+      ManipulatorConstants.ROLLER_VOLTAGE_COMPENSATION.inVolts
+    )
+    rollerSparkMax.setSmartCurrentLimit(ManipulatorConstants.ROLLER_CURRENT_LIMIT.inAmperes.toInt())
+    rollerSparkMax.inverted = ManipulatorConstants.ROLLER_MOTOR_INVERTED
 
-   rollerSparkMax.idleMode = CANSparkMax.IdleMode.kCoast
+    rollerSparkMax.idleMode = CANSparkMax.IdleMode.kCoast
 
-   rollerSparkMax.openLoopRampRate = 0.0
-   rollerSparkMax.burnFlash()
+    rollerSparkMax.openLoopRampRate = 0.0
+    rollerSparkMax.burnFlash()
 
-   MotorChecker.add(
-     "Manipulator",
-     "Roller",
-     MotorCollection(
-       mutableListOf(Neo(rollerSparkMax, "Roller Motor")),
-       ManipulatorConstants.ROLLER_CURRENT_LIMIT,
-       70.celsius,
-       ManipulatorConstants.ROLLER_CURRENT_LIMIT - 0.amps,
-       90.celsius
-     ),
-   )
-
- }
+    MotorChecker.add(
+      "Manipulator",
+      "Roller",
+      MotorCollection(
+        mutableListOf(Neo(rollerSparkMax, "Roller Motor")),
+        ManipulatorConstants.ROLLER_CURRENT_LIMIT,
+        70.celsius,
+        ManipulatorConstants.ROLLER_CURRENT_LIMIT - 0.amps,
+        90.celsius
+      ),
+    )
+  }
 
   override fun updateInputs(inputs: ManipulatorIO.ManipulatorIOInputs) {
     inputs.rollerVelocity = rollerSensor.velocity
@@ -68,7 +69,6 @@ object ManipulatorIONeo : ManipulatorIO {
     inputs.rollerSupplyCurrent =
       inputs.rollerStatorCurrent * rollerSparkMax.appliedOutput.absoluteValue
     inputs.rollerTemp = rollerSparkMax.motorTemperature.celsius
-
   }
 
   /**
@@ -99,6 +99,4 @@ object ManipulatorIONeo : ManipulatorIO {
       rollerSparkMax.idleMode = CANSparkMax.IdleMode.kCoast
     }
   }
-
-
 }

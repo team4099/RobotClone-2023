@@ -65,7 +65,6 @@ object ManipulatorIOSim : ManipulatorIO {
     )
   }
 
-
   /**
    * Sets the voltage of the roller motor using a clamp to limit between min and max volts
    *
@@ -81,5 +80,4 @@ object ManipulatorIOSim : ManipulatorIO {
         .inVolts
     )
   }
-
 }

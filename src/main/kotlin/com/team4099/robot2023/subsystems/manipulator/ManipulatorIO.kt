@@ -24,7 +24,6 @@ interface ManipulatorIO {
     var rollerTemp = 0.0.celsius
     var isSimulating = false
 
-
     override fun toLog(table: LogTable?) {
 
       table?.put("rollerVelocityRPM", rollerVelocity.inRotationsPerMinute)
@@ -72,6 +71,4 @@ interface ManipulatorIO {
    * @param brake if it brakes
    */
   fun setRollerBrakeMode(brake: Boolean) {}
-
-
 }

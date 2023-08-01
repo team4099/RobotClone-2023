@@ -33,4 +33,6 @@ object ControlBoard {
     get() = driver.leftShoulderButton
 
   val resetGyro = Trigger { driver.startButton && driver.selectButton }
+
+  val testTrigger = Trigger { driver.aButton }
 }

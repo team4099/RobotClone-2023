@@ -144,15 +144,16 @@ class GroundIntake(private val io: GroundIntakeIO) {
 
   var currentState: GroundIntakeState = GroundIntakeState.UNINITIALIZED
 
+
   var currentRequest: GroundIntakeRequest = GroundIntakeRequest.ZeroArm()
     set(value) {
       when (value) {
         is GroundIntakeRequest.OpenLoop -> {
-          armVoltageTarget = value.voltage
+          armVoltageTarget = value.armVoltage
           rollerVoltageTarget = value.rollerVoltage
         }
         is GroundIntakeRequest.TargetingPosition -> {
-          armPositionTarget = value.position
+          armPositionTarget = value.armPosition
           rollerVoltageTarget = value.rollerVoltage
         }
         else -> {}
@@ -223,6 +224,111 @@ class GroundIntake(private val io: GroundIntakeIO) {
           GroundIntakeConstants.PID.ARM_KA
         )
     }
+  }
+
+  fun periodic() {
+    io.updateInputs(inputs)
+
+    if (kP.hasChanged() || kI.hasChanged() || kD.hasChanged()) {
+      io.configPID(kP.get(), kI.get(), kD.get())
+    }
+
+    Logger.getInstance().processInputs("GroundIntake", inputs)
+
+    Logger.getInstance().recordOutput("GroundIntake/currentState", currentState.name)
+
+    Logger.getInstance()
+      .recordOutput("GroundIntake/requestedState", currentRequest.javaClass.simpleName)
+
+    Logger.getInstance().recordOutput("GroundIntake/isAtTargetedPosition", isAtTargetedPosition)
+
+    Logger.getInstance().recordOutput("Elevator/canContinueSafely", canContinueSafely)
+
+    Logger.getInstance().recordOutput("GroundIntake/isZeroed", isZeroed)
+
+    if (Constants.Tuning.DEBUGING_MODE) {
+      Logger.getInstance()
+        .recordOutput(
+          "GroundIntake/isAtCommandedState", currentState.equivalentToRequest(currentRequest)
+        )
+
+      Logger.getInstance()
+        .recordOutput("GroundIntake/timeProfileGeneratedAt", timeProfileGeneratedAt.inSeconds)
+
+      Logger.getInstance()
+        .recordOutput("GroundIntake/armPositionTarget", armPositionTarget.inDegrees)
+
+      Logger.getInstance().recordOutput("GroundIntake/armVoltageTarget", armVoltageTarget.inVolts)
+
+      Logger.getInstance()
+        .recordOutput("GroundIntake/rollerVoltageTarget", rollerVoltageTarget.inVolts)
+
+      Logger.getInstance()
+        .recordOutput("GroundIntake/lastCommandedAngle", lastArmPositionTarget.inDegrees)
+
+      Logger.getInstance().recordOutput("GroundIntake/forwardLimitReached", forwardLimitReached)
+
+      Logger.getInstance().recordOutput("GroundIntake/reverseLimitReached", reverseLimitReached)
+    }
+
+    var nextState = currentState
+    when (currentState) {
+      GroundIntakeState.UNINITIALIZED -> {
+
+
+        //Transitions
+        nextState = fromRequestToState(currentRequest)
+      }
+      GroundIntakeState.ZEROING_ARM -> {
+        zeroArm()
+
+        if (inputs.isSimulated ||
+          (inputs.armPosition - inputs.armAbsoluteEncoderPosition).absoluteValue <= 1.degrees
+        ) {
+          isZeroed = true
+          lastArmPositionTarget = -1337.degrees
+        }
+
+        // Transitions
+        nextState = fromRequestToState(currentRequest)
+      }
+    }
+
+    currentState = nextState
+
+
+  }
+
+  fun zeroArm() {
+    io.zeroEncoder()
+  }
+
+
+  companion object {
+    enum class GroundIntakeState {
+      UNINITIALIZED,
+      OPEN_LOOP_REQUEST,
+      TARGETING_POSITION,
+      ZEROING_ARM;
+
+      inline fun equivalentToRequest(request: GroundIntakeRequest): Boolean {
+        return (
+          (request is GroundIntakeRequest.OpenLoop && this == OPEN_LOOP_REQUEST)
+          || (request is GroundIntakeRequest.TargetingPosition && this == TARGETING_POSITION)
+            || (request is GroundIntakeRequest.ZeroArm && this == ZEROING_ARM)
+          )
+      }
+    }
+
+    inline fun fromRequestToState(request: GroundIntakeRequest): GroundIntakeState {
+      return when (request) {
+        is GroundIntakeRequest.OpenLoop -> GroundIntakeState.OPEN_LOOP_REQUEST
+        is GroundIntakeRequest.TargetingPosition -> GroundIntakeState.TARGETING_POSITION
+        is GroundIntakeRequest.ZeroArm -> GroundIntakeState.ZEROING_ARM
+      }
+    }
+
+
   }
 
 }

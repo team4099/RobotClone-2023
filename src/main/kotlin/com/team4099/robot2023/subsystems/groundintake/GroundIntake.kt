@@ -292,6 +292,80 @@ class GroundIntake(private val io: GroundIntakeIO) {
         // Transitions
         nextState = fromRequestToState(currentRequest)
       }
+      GroundIntakeState.OPEN_LOOP_REQUEST -> {
+        // Outputs
+        if (armVoltageTarget != lastArmVoltage) {
+          lastIntakeRunTime = Clock.fpgaTime
+        }
+
+        setArmVoltage(armVoltageTarget)
+        setRollerVoltage(rollerVoltageTarget)
+
+        // Transitions
+        nextState = fromRequestToState(currentRequest)
+
+        // See related comment in targeting position to see why we do this
+        if (!(currentState.equivalentToRequest(currentRequest))) {
+          lastArmVoltage = -1337.volts
+        }
+      }
+      GroundIntakeState.TARGETING_POSITION -> {
+        // Outputs
+        if (armPositionTarget != lastArmPositionTarget) {
+          val preProfileGenerate = Clock.realTimestamp
+          armProfile =
+            TrapezoidProfile(
+              armConstraints,
+              TrapezoidProfile.State(armPositionTarget, 0.0.degrees.perSecond),
+              TrapezoidProfile.State(inputs.armPosition, 0.0.degrees.perSecond)
+            )
+          val postProfileGenerate = Clock.realTimestamp
+          Logger.getInstance()
+            .recordOutput(
+              "/GroundIntake/ProfileGenerationMS",
+              postProfileGenerate.inSeconds - preProfileGenerate.inSeconds
+            )
+          timeProfileGeneratedAt = Clock.fpgaTime
+
+          // This statement is only run when the armPositionTarget is first noticed to be different
+          // than the previous setpoint the arm went to.
+          lastArmPositionTarget = armPositionTarget
+          lastIntakeRunTime = Clock.fpgaTime
+        }
+
+        val timeElapsed = Clock.fpgaTime - timeProfileGeneratedAt
+
+        val profileOutput = armProfile.calculate(timeElapsed)
+
+        if (armProfile.isFinished(timeElapsed)) {
+          setRollerVoltage(rollerVoltageTarget)
+        }
+
+        setArmPosition(profileOutput)
+
+        Logger.getInstance()
+          .recordOutput("GroundIntake/completedMotionProfile", armProfile.isFinished(timeElapsed))
+
+        Logger.getInstance()
+          .recordOutput("GroundIntake/profilePositionDegrees", profileOutput.position.inDegrees)
+        Logger.getInstance()
+          .recordOutput(
+            "GroundIntake/profileVelocityDegreesPerSecond",
+            profileOutput.velocity.inDegreesPerSecond
+          )
+
+        // Transitions
+        nextState = fromRequestToState(currentRequest)
+
+        // if we're transitioning out of targeting position, we want to make sure the next time we
+        // enter targeting position, we regenerate profile (even if the arm setpoint is the same as
+        // the previous time we ran it)
+        if (!(currentState.equivalentToRequest(currentRequest))) {
+          // setting the last target to something unreasonable so the profile is generated next loop
+          // cycle
+          lastArmPositionTarget = (-1337).degrees
+        }
+      }
     }
 
     currentState = nextState
@@ -299,9 +373,71 @@ class GroundIntake(private val io: GroundIntakeIO) {
 
   }
 
+  fun setRollerVoltage(appliedVoltage: ElectricalPotential) {
+    io.setRollerVoltage(appliedVoltage)
+  }
+
+  fun setArmBrakeMode(brake: Boolean) {
+    io.setArmBrakeMode(brake)
+    Logger.getInstance().recordOutput("GroundIntake/armBrakeModeEnabled", brake)
+  }
+
+
+
+
   fun zeroArm() {
     io.zeroEncoder()
   }
+
+  fun regenerateProfileNextLoopCycle() {
+    lastArmVoltage = -3337.volts
+    lastArmPositionTarget = -3337.degrees
+    lastIntakeRunTime = -3337.seconds
+  }
+
+  fun setArmVoltage(voltage: ElectricalPotential) {
+    //    if ((openLoopForwardLimitReached && voltage > 0.0.volts) ||
+    //      (openLoopReverseLimitReached && voltage < 0.0.volts)
+    //    ) {
+    //      io.setArmVoltage(0.0.volts)
+    //    } else {
+    io.setArmVoltage(voltage)
+    //    }
+  }
+
+  private fun setArmPosition(setpoint: TrapezoidProfile.State<Radian>) {
+
+    // Calculating the acceleration of the arm
+    val armAngularAcceleration =
+      (setpoint.velocity - prevArmSetpoint.velocity) / Constants.Universal.LOOP_PERIOD_TIME
+    prevArmSetpoint = setpoint
+
+    // Set up the feed forward variable
+    val feedforward =
+      armFeedforward.calculate(setpoint.position, setpoint.velocity, armAngularAcceleration)
+
+    // When the forward or reverse limit is reached, set the voltage to 0
+    // Else move the arm to the setpoint position
+    if (isOutOfBounds(setpoint.velocity)) {
+      io.setArmVoltage(armFeedforward.calculate(inputs.armPosition, 0.degrees.perSecond))
+    } else {
+      io.setArmPosition(setpoint.position, feedforward)
+    }
+
+    Logger.getInstance()
+      .recordOutput("GroundIntake/profileIsOutOfBounds", isOutOfBounds(setpoint.velocity))
+    Logger.getInstance().recordOutput("GroundIntake/armFeedForward", feedforward.inVolts)
+    Logger.getInstance().recordOutput("GroundIntake/armTargetPosition", setpoint.position.inDegrees)
+    Logger.getInstance()
+      .recordOutput("GroundIntake/armTargetVelocity", setpoint.velocity.inDegreesPerSecond)
+  }
+
+  private fun isOutOfBounds(velocity: AngularVelocity): Boolean {
+    return (velocity > 0.0.degrees.perSecond && forwardLimitReached) ||
+      (velocity < 0.0.degrees.perSecond && reverseLimitReached)
+  }
+
+
 
 
   companion object {

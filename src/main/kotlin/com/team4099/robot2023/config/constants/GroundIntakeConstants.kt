@@ -1,11 +1,14 @@
 package com.team4099.robot2023.config.constants
 import org.team4099.lib.units.base.amps
+import org.team4099.lib.units.base.grams
+import org.team4099.lib.units.base.inches
 import org.team4099.lib.units.base.meters
 import org.team4099.lib.units.base.seconds
 import org.team4099.lib.units.derived.degrees
 import org.team4099.lib.units.derived.gearRatio
 import org.team4099.lib.units.derived.radians
 import org.team4099.lib.units.derived.volts
+import org.team4099.lib.units.kilo
 import org.team4099.lib.units.perSecond
 
 object GroundIntakeConstants {
@@ -14,6 +17,9 @@ object GroundIntakeConstants {
   val ROLLER_CURRENT_LIMIT = 0.amps
   val ROLLER_MOTOR_INVERTED = true
   val ROLLER_VOLTAGE_COMPENSATION = 12.volts
+  val ROLLER_MOMENT_INERTIA = 0.0000478.kilo.grams * 1.0.meters.squared
+  val ARM_MOMENT_INERTIA = 0.0000478.kilo.grams * 1.0.meters.squared
+  val ARM_LENGTH = 12.695.inches
 
   // TODO Get arm values from CAD
   val ARM_GEAR_RATIO = 1.0.gearRatio
@@ -39,7 +45,7 @@ object GroundIntakeConstants {
 
   // TODO Figure out values for ground intake motion
   val ARM_MIN_ROTATION = 0.degrees
-  val ARM_MAX_ROTATION = 0.degrees
+  val ARM_MAX_ROTATION = 56.6.degrees
   val ARM_OPEN_LOOP_MIN_ROTATION = 0.degrees
   val ARM_OPEN_LOOP_MAX_ROTATION = 0.degrees
   val MAX_ARM_VELOCITY = 0.degrees.perSecond

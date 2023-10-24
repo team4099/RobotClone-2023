@@ -48,14 +48,14 @@ class SwerveModuleIOFalcon(
     ctreAngularMechanismSensor(
       steeringFalcon,
       DrivetrainConstants.STEERING_SENSOR_CPR,
-      DrivetrainConstants.STEERING_SENSOR_GEAR_RATIO,
+      DrivetrainConstants.FalconConstants.STEERING_SENSOR_GEAR_RATIO,
       DrivetrainConstants.STEERING_COMPENSATION_VOLTAGE
     )
   private val driveSensor =
     ctreLinearMechanismSensor(
       driveFalcon,
       DrivetrainConstants.DRIVE_SENSOR_CPR,
-      DrivetrainConstants.DRIVE_SENSOR_GEAR_RATIO,
+      DrivetrainConstants.FalconConstants.DRIVE_SENSOR_GEAR_RATIO,
       DrivetrainConstants.WHEEL_DIAMETER,
       DrivetrainConstants.DRIVE_COMPENSATION_VOLTAGE
     )

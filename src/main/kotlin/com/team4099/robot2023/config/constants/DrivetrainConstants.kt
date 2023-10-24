@@ -28,6 +28,17 @@ import org.team4099.lib.units.perSecond
 import kotlin.math.sqrt
 
 object DrivetrainConstants {
+  object NeoConstants {
+    const val DRIVE_SENSOR_GEAR_RATIO = 4.71
+    const val STEERING_SENSOR_GEAR_RATIO = 9423.0 / 203.0
+    var DRIVE_SETPOINT_MAX = 15.6.feet.perSecond
+  }
+
+  object FalconConstants {
+    const val DRIVE_SENSOR_GEAR_RATIO = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0)
+    const val STEERING_SENSOR_GEAR_RATIO = 7.0 / 150.0
+  }
+
   const val MINIMIZE_SKEW = false
 
   const val WHEEL_COUNT = 4
@@ -62,9 +73,7 @@ object DrivetrainConstants {
 
   const val DRIVE_SENSOR_CPR = 2048
   const val STEERING_SENSOR_CPR = 2048
-
-  const val DRIVE_SENSOR_GEAR_RATIO = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0)
-  const val STEERING_SENSOR_GEAR_RATIO = 7.0 / 150.0
+  const val STEERING_THROUGH_BORE_CPR = 8192
 
   val ALLOWED_STEERING_ANGLE_ERROR = 1.degrees
 
@@ -73,7 +82,9 @@ object DrivetrainConstants {
   val DRIVE_THRESHOLD_CURRENT_LIMIT = 60.0.amps
   val DRIVE_TRIGGER_THRESHOLD_TIME = 0.1.seconds
 
-  val DRIVE_STATOR_CURRENT_LIMIT = 65.0.amps
+  val STEERING_STATOR_CURRENT_LIMIT = 25.amps
+  val DRIVE_STATOR_CURRENT_LIMIT = 60.0.amps
+
   val DRIVE_STATOR_THRESHOLD_CURRENT_LIMIT = 80.0.amps
   val DRIVE_STATOR_TRIGGER_THRESHOLD_TIME = 1.0.seconds
 
